@@ -1,0 +1,9 @@
+build/
+kernel/build/
+proof-ffi/target/
+*.so
+*.o
+prl
+challenge_solver
+.DS_Store
+pearl

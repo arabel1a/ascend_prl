@@ -1,0 +1,17 @@
+[workspace]
+
+[package]
+name = "pearl-proof-ffi"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "pearl_proof"
+crate-type = ["cdylib"]
+
+[dependencies]
+pearl-blake3 = { path = "/root/pearl-rust/pearl-blake3", features = ["serde"] }
+zk-pow = { path = "/root/pearl-rust/zk-pow" }
+bincode = "1"
+base64 = "0.22"
+blake3 = "1.8"
