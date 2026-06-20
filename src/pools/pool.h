@@ -44,6 +44,7 @@ typedef struct {
     int msg_id;
     job_t job;
     const char *tag;            /* "" for the user connection, " [dev]" for the dev-fee one */
+    int gzip;                   /* 1 = pool negotiated type:"v2" -> send gzip(proof) (kryptex) */
 } pool_conn_t;
 
 /* The protocol-specific surface. Exactly one instance (named POOL) is linked per binary. */

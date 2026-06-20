@@ -23,6 +23,7 @@ void pool_conn_init(pool_conn_t *c, const char *tag) {
     c->dead = 1;
     c->msg_id = 0;
     c->tag = tag;
+    c->gzip = 0;
     c->job.have = 0;
     pthread_mutex_init(&c->send_mu, 0);
 }

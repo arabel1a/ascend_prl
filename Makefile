@@ -66,8 +66,10 @@ $(OUT):
 # async PoW pool overlapping the NPU. Runtime deps: libpearl_hlc2.so (kernel) + libpearl_proof.so.
 # Both frontends use the FIXED miner-chosen shape from this build (RANK/K/MDIM) and encode it in
 # the proof; the k1 binary speaks the k1pool wire dialect but IGNORES the pool's set_mining_params.
-ENGINE_SRC := src/miner.c src/pools/stratum.c src/prep.c src/scan_mbatch_async.c src/blake3_join.c $(BLK_SRC)
-LINK := -L$(OUT) -lpearl_hlc2 -lpearl_proof -lpthread $(RPATH)
+ENGINE_SRC := src/miner.c src/proofgz.c src/pools/stratum.c src/prep.c src/scan_mbatch_async.c src/blake3_join.c $(BLK_SRC)
+# -l:libz.so.1 links the runtime zlib by exact soname (the build box has no libz.so dev symlink) for
+# the kryptex type:"v2" gzip proof path (src/proofgz.c).
+LINK := -L$(OUT) -lpearl_hlc2 -lpearl_proof -lpthread -l:libz.so.1 $(RPATH)
 miner: $(OUT)
 	$(CC) $(CFLAGS) -o $(OUT)/ascend_prl_kryptex src/pools/kryptex.c $(ENGINE_SRC) $(LINK)
 	$(CC) $(CFLAGS) -o $(OUT)/ascend_prl_k1       src/pools/k1.c      $(ENGINE_SRC) $(LINK)

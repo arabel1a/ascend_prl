@@ -65,6 +65,9 @@ extern ssize_t build_proof_b64(const uint8_t *a, const uint8_t *b, size_t m, siz
                                uint8_t *out, size_t cap);
 extern int hash_key(const uint8_t *hdr, size_t hl, size_t k, size_t rank,
                     const size_t *rp, size_t nr, const size_t *cp, size_t nc, uint8_t *out);
+/* base64(bincode) -> base64(gzip(bincode)); used when a conn negotiated kryptex type:"v2"
+ * (src/proofgz.c, links libz). Returns the new b64 length or -1. */
+extern ssize_t gzip_proof_b64(const char *in_b64, size_t in_len, uint8_t *out, size_t cap);
 
 /* ---- connections + shared mining state ---- */
 /* cont48h: dev-fee runs a SECOND connection authorized as DEV_FEE_ADDR, pre-warmed behind the
@@ -336,6 +339,7 @@ int main(int argc, char **argv) {
     }
     uint32_t *scratch = malloc(2ull * nbands * 16 * 64 * 4);
     uint8_t *b64 = malloc(64 << 20);
+    uint8_t *gzbuf = malloc(64 << 20);   /* base64(gzip(proof)) scratch for kryptex type:"v2" conns */
     size_t rows_abs[64], cols_abs[64];
 
     if (g_reuse_b) {   /* shared B-side cache + A-side scratch */
@@ -437,11 +441,20 @@ int main(int argc, char **argv) {
                  * the pool credits the right wallet; job_id is that session's current job. */
                 pool_conn_t *sc = g_dev_now ? &dev_conn : &user_conn;
                 const char *sub_addr = g_dev_now ? DEV_FEE_ADDR : addr;
-                char *msg = malloc((size_t)bl + 512);
+                /* if this conn negotiated kryptex type:"v2", recompress the proof to base64(gzip).
+                 * On (unexpected) gzip failure, fall back to the plain proof + clear the flag so the
+                 * field name (submit_prefix reads sc->gzip) stays consistent with the payload. */
+                const uint8_t *payload = b64; size_t plen = (size_t)bl;
+                if (sc->gzip) {
+                    ssize_t gl = gzip_proof_b64((const char *)b64, (size_t)bl, gzbuf, 64 << 20);
+                    if (gl > 0) { payload = gzbuf; plen = (size_t)gl; }
+                    else { printf("[!] gzip proof failed (%zd), sending plain\n", gl); sc->gzip = 0; }
+                }
+                char *msg = malloc(plen + 512);
                 const char *tail;
                 int hl = POOL.submit_prefix(sc, sub_addr, worker, cur->job_id, msg, 512, &tail);
-                memcpy(msg + hl, b64, (size_t)bl);
-                strcpy(msg + hl + bl, tail);
+                memcpy(msg + hl, payload, plen);
+                strcpy(msg + hl + plen, tail);
                 pool_send_line(sc, msg);
                 if (getenv("PRL_RAW")) fprintf(stderr, "[raw>] %s\n", msg);
                 free(msg);
