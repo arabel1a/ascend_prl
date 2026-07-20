@@ -1,5 +1,7 @@
 # `ascend_prl` — the world's first Ascend NPU cryptocurrency miner
 
+[![No Maintenance Intended](http://unmaintained.tech/badge.svg)](http://unmaintained.tech/)
+
 **English** | [中文](README_zh.md)
 
 A from-scratch miner for the [Pearl](https://arxiv.org/abs/2504.09971) Proof-of-**Useful**-Work
